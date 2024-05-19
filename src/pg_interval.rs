@@ -1,10 +1,20 @@
 use crate::interval_norm::IntervalNorm;
 
+#[cfg(feature = "rkyv")]
+use rkyv::Archive;
+#[cfg(feature = "rkyv")]
+use rkyv::Deserialize as RkyvDeserialize;
+#[cfg(feature = "rkyv")]
+use rkyv::Serialize as RkyvSerialize;
+
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
+#[cfg_attr(feature = "rkyv", derive(Archive, RkyvSerialize, RkyvDeserialize,))]
+#[cfg_attr(feature = "rkyv", archive(compare(PartialEq), check_bytes))]
+#[cfg_attr(feature = "rkyv", archive_attr(derive(Debug)))]
 pub struct Interval {
     pub months: i32,
     pub days: i32,
@@ -453,4 +463,24 @@ mod tests {
         assert_eq!(String::from("-1:10:15"), output);
     }
 
+}
+
+#[cfg(feature = "rkyv")]
+#[cfg(test)]
+mod rkyv_tests {
+    use super::Interval;
+    use rkyv::Deserialize;
+
+    #[test]
+    fn test_rkyv() {
+        let value = Interval::new(1, 1, 30);
+        let bytes = rkyv::to_bytes::<Interval, { std::mem::size_of::<Interval>() }>(&value)
+            .unwrap();
+        println!("{:?}", bytes);
+        let archived = rkyv::check_archived_root::<Interval>(&bytes[..]).unwrap();
+        assert_eq!(&value, archived);
+
+        let deserialized: Interval = archived.deserialize(&mut rkyv::Infallible).unwrap();
+        assert_eq!(value, deserialized);
+    }
 }

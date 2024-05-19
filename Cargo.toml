@@ -14,6 +14,21 @@ categories = ["date-and-time"]
 [features]
 default = ["postgres"]
 postgres = ["postgres-types"]
+serde = [
+    "dep:serde",
+    "serde/derive"
+]
+rkyv = [
+    "dep:rkyv",
+    "rkyv/size_32",
+]
+rkyv-validation = ["rkyv?/validation"]
+
+[dependencies.rkyv]
+version = "0.7.42"
+optional = true
+default-features = false
+
 
 [dependencies.serde]
 version = "1.0.137"
